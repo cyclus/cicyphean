@@ -31,7 +31,8 @@ def datespace(starty, startm, stopy, stopm):
 class BatlabCache(object):
 
     overview_base_url = "http://submit-1.batlab.org/nmi/results/overview?"
-    overview_base_query = {'storedSearch': 0}
+    overview_base_query = {'storedSearch': 0, 'sortDirection': 'down', 
+                           'sortBy': 'start'}
 
     def __init__(self, year, month, username="", cachedir="cache"):
         self.username = username
