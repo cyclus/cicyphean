@@ -93,10 +93,13 @@ class BatlabCache(object):
             fname = self.month_filename.format(year=y, month=m)
 
 null = lambda x: x
+respace = lambda s: s.replace('\xa0', ' ')
 
 class OverviewParser(HTMLParser):
 
     statuses = frozenset([
+        'tableRow0',
+        'tableRow1',
         'tableRow0StatusInProgress',
         'tableRow1StatusInProgress',
         'tableRow0StatusInternalError',
@@ -115,13 +118,13 @@ class OverviewParser(HTMLParser):
         'tableRow1StatusTimedOut',
         ])
 
-    fields = (None, 'id', 'result', 'user', 'type', 'project', 'project_version', 
-              'component', 'component_version', 'start', 'duration', 'description',
-              'platforms')
+    fields = (None, 'id', 'result', 'user', 'type', 'project', None,
+              #'project_version', 'component' , 'component_version', 
+              'start', 'duration', 'description', 'platforms')
 
     colparsers = {
-        'id': lambda s: int(s.split('>')[1].split('<')[0]),
-        'result': null,
+        'id': lambda s: int(s.split('>')[1].split('<')[0] if '>' in s else s),
+        'result': respace,
         'user': null,
         'type': null,
         'project': null,
@@ -131,21 +134,22 @@ class OverviewParser(HTMLParser):
         'start': lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M:%S"),
         'duration': lambda s: sum([int(x)*d for x, d in \
                                    zip(s.split(':'), [3600, 60, 1])]),
-        'description': null,
-        'platforms': null,
+        'description': respace,
+        'platforms': respace,
         }
 
     def reset(self):
         """Sort of a constructor."""
+        super(OverviewParser, self).reset()
         self.data = {
             'id': [],
             'result': [],
             'user': [],
             'type': [],
             'project': [],
-            'project_version': [], 
-            'component': [],
-            'component_version': [],
+            #'project_version': [], 
+            #'component': [],
+            #'component_version': [],
             'start': [],
             'duration': [],
             'description': [],
@@ -154,6 +158,8 @@ class OverviewParser(HTMLParser):
         self.inrow = False
         self.col = -1
         self.incol = False
+        self.nrows = 0
+        self.coldata = None
 
     def parse(self, fname):
         """parses a file"""
@@ -169,10 +175,12 @@ class OverviewParser(HTMLParser):
             if attrs['class'] not in self.statuses:
                 return
             self.inrow = True
+            self.nrows += 1
             self.col = -1
         elif self.inrow and tag == 'td':
             self.col += 1
             self.incol = True
+            self.coldata = None
 
     def handle_data(self, data):
         if self.inrow and self.incol:
@@ -180,7 +188,9 @@ class OverviewParser(HTMLParser):
             colname = self.fields[col]
             if colname is None:
                 return
-            self.data[colname].append(self.colparsers[colname](data))
+            if self.coldata is None:
+                self.coldata = ''
+            self.coldata += data
 
     def handle_endtag(self, tag):
         if tag == 'tr' and self.inrow:
@@ -189,4 +199,10 @@ class OverviewParser(HTMLParser):
             return 
         elif self.inrow and tag == 'td':
             self.incol = False
-
+            col = self.col
+            colname = self.fields[col]
+            if colname is None:
+                return
+            coldata = None if self.coldata is None \
+                           else self.colparsers[colname](self.coldata)
+            self.data[colname].append(coldata)
