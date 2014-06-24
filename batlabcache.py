@@ -87,10 +87,20 @@ class BatlabCache(object):
 
     def overview(self, year, month, stop_year=None, stop_month=None):
         """Creates a pandas DataFrame for a month or a range of months."""
+        dfs = []
         stop_year = stop_year or year
         stop_month = stop_month or month
         for y, m in datespace(year, month, stop_year, stop_month):
             fname = self.month_filename.format(year=y, month=m)
+            op = OverviewParser(convert_charrefs=True)
+            op.parse(fname)
+            dfs.append(pandas.DataFrame(op.data))
+        df = dfs[0]
+        if len(dfs) > 1:
+            for d in dfs[1:]:
+                df = df.append(d)
+        return df
+
 
 null = lambda x: x
 respace = lambda s: s.replace('\xa0', ' ')
