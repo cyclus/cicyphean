@@ -95,7 +95,7 @@ class BatlabCache(object):
             fname = self.month_filename.format(year=y, month=m)
             op = OverviewParser(convert_charrefs=True)
             op.parse(fname)
-            dfs.append(pandas.DataFrame(op.data))
+            dfs.append(pandas.DataFrame(op.data, index=op.data['start']))
         df = dfs[0]
         if len(dfs) > 1:
             for d in dfs[1:]:
