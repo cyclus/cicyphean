@@ -143,8 +143,8 @@ class OverviewParser(HTMLParser):
         'component': null,
         'component_version': null,
         'start': lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M:%S"),
-        'duration': lambda s: sum([int(x)*d for x, d in \
-                                   zip(s.split(':'), [3600, 60, 1])]),
+        'duration': lambda s: 0 if s == 'Unfinished' else \
+                        sum([int(x)*d for x, d in zip(s.split(':'), [3600, 60, 1])]),
         'description': respace,
         'platforms': respace,
         }
