@@ -77,6 +77,16 @@ class BatlabCache(object):
         now = time.gmtime()
         self.download_month(now.tm_year, now.tm_mon)
 
+    def download_last_month(self):
+        now = time.gmtime()
+        y = now.tm_year
+        m = now.tm_mon
+        if m == 1:
+            y, m = y - 1, 12
+        else:
+            m = m - 1 
+        self.download_month(y, m)
+
     def overview_url(self, year, month):
         query = dict(self.overview_base_query)
         query['user'] = self.username
